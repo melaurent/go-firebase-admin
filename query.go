@@ -1,5 +1,7 @@
 package admin
 
+import "golang.org/x/net/context"
+
 // Query is the query interface
 type Query interface {
 	Ref() *Reference
@@ -18,12 +20,12 @@ type Query interface {
 	OnChildRemoved(event chan *OldChildSnapshot) CancelFunc
 	OnChildChanged(event chan *ChildSnapshot) CancelFunc
 	OnChildMoved(event chan *ChildSnapshot) CancelFunc
-	OnceValue() (*DataSnapshot, error)
+	OnceValue(context context.Context) (*DataSnapshot, error)
 	OnceChildAdded() *ChildSnapshot
 	OnceChildRemove() *OldChildSnapshot
 	OnceChildChanged() *ChildSnapshot
 	OnceChildMoved() *ChildSnapshot
-	String() string
+	String(context context.Context) string
 }
 
 // CancelFunc is the function for cancel "On"

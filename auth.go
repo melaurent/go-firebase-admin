@@ -1,7 +1,6 @@
 package admin
 
 import (
-	"context"
 	"crypto/rsa"
 	"encoding/json"
 	"errors"
@@ -9,7 +8,7 @@ import (
 	"net/http"
 	"sync"
 	"time"
-
+	"golang.org/x/net/context"
 	jwt "github.com/dgrijalva/jwt-go"
 	"golang.org/x/oauth2"
 	"google.golang.org/api/identitytoolkit/v3"
@@ -30,8 +29,9 @@ const (
 	customTokenAudience = "https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit"
 )
 
-func newAuth(app *App) (*Auth, error) {
-	client, err := identitytoolkit.New(oauth2.NewClient(context.Background(), app.tokenSource))
+func newAuth(app *App, context context.Context) (*Auth, error) {
+	tkSource := app.jwtConfig.TokenSource(context)
+	client, err := identitytoolkit.New(oauth2.NewClient(context, tkSource))
 	if err != nil {
 		return nil, err
 	}

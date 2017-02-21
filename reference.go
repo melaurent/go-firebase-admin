@@ -10,6 +10,7 @@ import (
 	"net/url"
 	_path "path"
 	"strconv"
+	"golang.org/x/net/context"
 )
 
 // Reference represents a specific location in Database
@@ -90,15 +91,14 @@ func (ref *Reference) buildQuery(q url.Values) error {
 	return nil
 }
 
-func (ref *Reference) url() (*url.URL, error) {
+func (ref *Reference) url(context context.Context) (*url.URL, error) {
 	u, err := url.Parse(ref.database.app.databaseURL + "/" + ref.path + ".json")
 	if err != nil {
 		return nil, err
 	}
-	if ref.database.app.tokenSource == nil {
-		return u, nil
-	}
-	tk, err := ref.database.app.tokenSource.Token()
+
+	tkSource := ref.database.app.jwtConfig.TokenSource(context)
+	tk, err := tkSource.Token()
 	if err != nil {
 		return nil, err
 	}
@@ -114,8 +114,8 @@ func (ref *Reference) url() (*url.URL, error) {
 	return u, nil
 }
 
-func (ref *Reference) invokeRequest(method string, body io.Reader) ([]byte, error) {
-	url, err := ref.url()
+func (ref *Reference) invokeRequest(method string, body io.Reader, context context.Context) ([]byte, error) {
+	url, err := ref.url(context)
 	if err != nil {
 		return nil, err
 	}
@@ -147,13 +147,13 @@ func (ref *Reference) invokeRequest(method string, body io.Reader) ([]byte, erro
 }
 
 // Set writes data to current location
-func (ref *Reference) Set(value interface{}) error {
+func (ref *Reference) Set(value interface{}, context context.Context) error {
 	buf := bytes.NewBuffer([]byte{})
 	err := json.NewEncoder(buf).Encode(value)
 	if err != nil {
 		return err
 	}
-	_, err = ref.invokeRequest(http.MethodPut, buf)
+	_, err = ref.invokeRequest(http.MethodPut, buf, context)
 	if err != nil {
 		return err
 	}
@@ -161,13 +161,13 @@ func (ref *Reference) Set(value interface{}) error {
 }
 
 // Push pushs data to current location
-func (ref *Reference) Push(value interface{}) error {
+func (ref *Reference) Push(value interface{}, context context.Context) error {
 	buf := bytes.NewBuffer([]byte{})
 	err := json.NewEncoder(buf).Encode(value)
 	if err != nil {
 		return err
 	}
-	_, err = ref.invokeRequest(http.MethodPost, buf)
+	_, err = ref.invokeRequest(http.MethodPost, buf, context)
 	if err != nil {
 		return err
 	}
@@ -175,8 +175,8 @@ func (ref *Reference) Push(value interface{}) error {
 }
 
 // Remove removes data from current location
-func (ref *Reference) Remove() error {
-	_, err := ref.invokeRequest(http.MethodDelete, nil)
+func (ref *Reference) Remove(context context.Context) error {
+	_, err := ref.invokeRequest(http.MethodDelete, nil, context)
 	if err != nil {
 		return err
 	}
@@ -319,9 +319,9 @@ func (ref *Reference) OnChildMoved(event chan *ChildSnapshot) CancelFunc {
 }
 
 // OnceValue implements Query interface
-func (ref *Reference) OnceValue() (*DataSnapshot, error) {
+func (ref *Reference) OnceValue(context context.Context) (*DataSnapshot, error) {
 	// TODO: find from cached first
-	b, err := ref.invokeRequest(http.MethodGet, nil)
+	b, err := ref.invokeRequest(http.MethodGet, nil, context)
 	if err != nil {
 		return nil, err
 	}
@@ -352,8 +352,8 @@ func (ref *Reference) OnceChildMoved() *ChildSnapshot {
 }
 
 // String returns absolute URL for this location
-func (ref *Reference) String() string {
-	u, err := ref.url()
+func (ref *Reference) String(context context.Context) string {
+	u, err := ref.url(context)
 	if err != nil {
 		return ""
 	}

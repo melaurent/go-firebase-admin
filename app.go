@@ -1,11 +1,10 @@
 package admin
 
 import (
-	"context"
 	"crypto/rsa"
+	"golang.org/x/net/context"
 
 	jwtgo "github.com/dgrijalva/jwt-go"
-	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/oauth2/jwt"
 )
@@ -17,7 +16,6 @@ type App struct {
 	jwtConfig      *jwt.Config
 	privateKey     *rsa.PrivateKey
 	databaseURL    string
-	tokenSource    oauth2.TokenSource
 }
 
 // AppOptions is the firebase app options for initialize app
@@ -45,12 +43,6 @@ func InitializeApp(options AppOptions) (*App, error) {
 		if err != nil {
 			return nil, err
 		}
-		app.tokenSource = app.jwtConfig.TokenSource(context.Background())
-	} else {
-		app.tokenSource, err = google.DefaultTokenSource(context.Background(), scopes...)
-		if err != nil {
-			return nil, err
-		}
 	}
 
 	return &app, nil
@@ -60,8 +52,8 @@ func InitializeApp(options AppOptions) (*App, error) {
 // each instance has the save firebase app instance
 // but difference public keys instance
 // better create only one instance
-func (app *App) Auth() (*Auth, error) {
-	return newAuth(app)
+func (app *App) Auth(context context.Context) (*Auth, error) {
+	return newAuth(app, context)
 }
 
 // Database creates new Database instance

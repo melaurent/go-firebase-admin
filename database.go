@@ -6,7 +6,6 @@ import (
 	"net/http"
 	_url "net/url"
 	_path "path"
-	"time"
 )
 
 // Database type
@@ -25,8 +24,6 @@ var (
 
 func newDatabase(app *App) *Database {
 	tr := &http.Transport{
-		IdleConnTimeout: time.Minute * 5,
-		MaxIdleConns:    20,
 		Dial: func(network, address string) (net.Conn, error) {
 			c, err := net.Dial(network, address)
 			return c, err
