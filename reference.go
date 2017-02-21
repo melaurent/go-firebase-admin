@@ -11,6 +11,7 @@ import (
 	_path "path"
 	"strconv"
 	"golang.org/x/net/context"
+	"google.golang.org/appengine/urlfetch"
 )
 
 // Reference represents a specific location in Database
@@ -124,7 +125,9 @@ func (ref *Reference) invokeRequest(method string, body io.Reader, context conte
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	resp, err := ref.database.client.Do(req)
+	client := urlfetch.Client(context)
+	resp, err := client.Do(req)
+	//resp, err := ref.database.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -167,6 +170,7 @@ func (ref *Reference) Push(value interface{}, context context.Context) error {
 	if err != nil {
 		return err
 	}
+	print(buf.String())
 	_, err = ref.invokeRequest(http.MethodPost, buf, context)
 	if err != nil {
 		return err
